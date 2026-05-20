@@ -119,7 +119,10 @@ fn main() {
             .as_ref()
             .map(|e| format!(" {GRAY}({RESET}{YELLOW}{}{RESET}{GRAY}){RESET}", e.level))
             .unwrap_or_default();
-        segments.push(format!("{GREEN}{}{RESET}{effort_suffix}", model.display_name));
+        segments.push(format!(
+            "{GREEN}{}{RESET}{effort_suffix}",
+            model.display_name
+        ));
     }
 
     // Short path

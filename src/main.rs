@@ -6,6 +6,7 @@ use std::io::{self, Read};
 struct Input {
     workspace: Workspace,
     model: Option<Model>,
+    effort: Option<Effort>,
     cost: Option<Cost>,
     context_window: Option<ContextWindow>,
 }
@@ -18,6 +19,11 @@ struct Workspace {
 #[derive(Deserialize)]
 struct Model {
     display_name: String,
+}
+
+#[derive(Deserialize)]
+struct Effort {
+    level: String,
 }
 
 #[derive(Deserialize)]
@@ -106,9 +112,14 @@ fn main() {
     let sep = format!(" {GRAY}|{RESET} ");
     let mut segments: Vec<String> = Vec::new();
 
-    // Model name
+    // Model name + effort level
     if let Some(ref model) = input.model {
-        segments.push(format!("{GREEN}{}{RESET}", model.display_name));
+        let effort_suffix = input
+            .effort
+            .as_ref()
+            .map(|e| format!(" {GRAY}({RESET}{YELLOW}{}{RESET}{GRAY}){RESET}", e.level))
+            .unwrap_or_default();
+        segments.push(format!("{GREEN}{}{RESET}{effort_suffix}", model.display_name));
     }
 
     // Short path

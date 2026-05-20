@@ -6,6 +6,7 @@ set -eu
 eval "$(cat | jq -r '
   "cwd=\(.workspace.current_dir | @sh) " +
   "model=\(.model.display_name | @sh) " +
+  "effort=\((.effort.level // "") | @sh) " +
   "cost=\(.cost.total_cost_usd) " +
   "in_tks=\(.context_window.total_input_tokens) " +
   "out_tks=\(.context_window.total_output_tokens) " +
@@ -59,4 +60,9 @@ if git -C "$cwd" rev-parse --git-dir >/dev/null 2>&1; then
   fi
 fi
 
-printf "${GREEN}${model}${RST}${SEP}${CYAN}${last_two}${RST}${git_info}${SEP}${YELLOW}${pct_fmt}%%/${win_fmt} ctx${RST}${SEP}${LGRAY}${tks_fmt}/${cost_fmt} tks${RST}"
+effort_suffix=""
+if [ -n "$effort" ]; then
+  effort_suffix=" ${GRAY}(${RST}${YELLOW}${effort}${RST}${GRAY})${RST}"
+fi
+
+printf "${GREEN}${model}${RST}${effort_suffix}${SEP}${CYAN}${last_two}${RST}${git_info}${SEP}${YELLOW}${pct_fmt}%%/${win_fmt} ctx${RST}${SEP}${LGRAY}${tks_fmt}/${cost_fmt} tks${RST}"

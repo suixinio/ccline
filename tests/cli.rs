@@ -64,7 +64,7 @@ fn no_git_outside_repo() {
 }
 
 #[test]
-fn shows_token_count() {
+fn shows_context_percentage() {
     let mut cmd = cargo_bin_cmd!("ccline");
     cmd.write_stdin(full_json());
     cmd.assert()
@@ -78,7 +78,8 @@ fn shows_cost() {
     cmd.write_stdin(full_json());
     cmd.assert()
         .success()
-        .stdout(predicate::str::contains("42k/$0.12 tks"));
+        .stdout(predicate::str::contains("$0.12"))
+        .stdout(predicate::str::contains("tks").not());
 }
 
 #[test]

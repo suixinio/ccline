@@ -35,8 +35,6 @@ struct Cost {
 
 #[derive(Deserialize)]
 struct ContextWindow {
-    total_input_tokens: u64,
-    total_output_tokens: u64,
     used_percentage: Option<f64>,
 }
 
@@ -76,18 +74,6 @@ fn git_info(path: &str) -> Option<String> {
 
     let dirty_marker = if dirty { "*" } else { "" };
     Some(format!("{PURPLE}{}{dirty_marker}{RESET}", branch))
-}
-
-fn human_tokens(n: u64) -> String {
-    if n >= 1_000_000 {
-        format!("{:.1}M", n as f64 / 1_000_000.0)
-    } else if n >= 10_000 {
-        format!("{}k", n / 1000)
-    } else if n >= 1_000 {
-        format!("{:.1}k", n as f64 / 1000.0)
-    } else {
-        format!("{}", n)
-    }
 }
 
 fn human_duration(secs: u64) -> String {
@@ -166,26 +152,9 @@ fn main() {
         }
     }
 
-    // Token count + cost (combined)
-    let total_tokens = input
-        .context_window
-        .as_ref()
-        .map(|ctx| ctx.total_input_tokens + ctx.total_output_tokens);
-    match (total_tokens, input.cost.as_ref()) {
-        (Some(tks), Some(cost)) => {
-            segments.push(format!(
-                "{LIGHT_GRAY}{}/${:.2} tks{RESET}",
-                human_tokens(tks),
-                cost.total_cost_usd
-            ));
-        }
-        (Some(tks), None) => {
-            segments.push(format!("{LIGHT_GRAY}{} tks{RESET}", human_tokens(tks)));
-        }
-        (None, Some(cost)) => {
-            segments.push(format!("{LIGHT_GRAY}${:.2}{RESET}", cost.total_cost_usd));
-        }
-        _ => {}
+    // Session cost
+    if let Some(ref cost) = input.cost {
+        segments.push(format!("{LIGHT_GRAY}${:.2}{RESET}", cost.total_cost_usd));
     }
 
     // Weekly rate limit usage + reset countdown
@@ -215,31 +184,6 @@ fn main() {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn test_human_tokens_small() {
-        assert_eq!(human_tokens(847), "847");
-    }
-
-    #[test]
-    fn test_human_tokens_low_k() {
-        assert_eq!(human_tokens(1234), "1.2k");
-    }
-
-    #[test]
-    fn test_human_tokens_mid_k() {
-        assert_eq!(human_tokens(42000), "42k");
-    }
-
-    #[test]
-    fn test_human_tokens_millions() {
-        assert_eq!(human_tokens(1_523_400), "1.5M");
-    }
-
-    #[test]
-    fn test_human_tokens_zero() {
-        assert_eq!(human_tokens(0), "0");
-    }
 
     #[test]
     fn test_human_duration_days() {

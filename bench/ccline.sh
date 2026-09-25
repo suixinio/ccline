@@ -8,29 +8,12 @@ eval "$(cat | jq -r '
   "model=\(.model.display_name | @sh) " +
   "effort=\((.effort.level // "") | @sh) " +
   "cost=\(.cost.total_cost_usd) " +
-  "in_tks=\(.context_window.total_input_tokens) " +
-  "out_tks=\(.context_window.total_output_tokens) " +
   "pct=\(.context_window.used_percentage) " +
   "week_pct=\((.rate_limits.seven_day.used_percentage // "") | @sh) " +
   "week_reset=\((.rate_limits.seven_day.resets_at // "") | @sh)"
 ')"
-total_tks=$((in_tks + out_tks))
 last_two=$(echo "$cwd" | rev | cut -d/ -f1-2 | rev)
 
-human_tokens() {
-  n=$1
-  if [ "$n" -ge 1000000 ]; then
-    awk "BEGIN{printf \"%.1fM\", $n/1000000}"
-  elif [ "$n" -ge 10000 ]; then
-    echo "$((n / 1000))k"
-  elif [ "$n" -ge 1000 ]; then
-    awk "BEGIN{printf \"%.1fk\", $n/1000}"
-  else
-    echo "$n"
-  fi
-}
-
-tks_fmt=$(human_tokens "$total_tks")
 pct_fmt=$(printf '%.0f' "$pct")
 cost_fmt=$(printf '$%.2f' "$cost")
 
@@ -77,4 +60,4 @@ if [ -n "$week_pct" ] && [ -n "$week_reset" ]; then
   fi
 fi
 
-printf "${GREEN}${model}${RST}${effort_suffix}${SEP}${CYAN}${last_two}${RST}${git_info}${SEP}${YELLOW}${pct_fmt}%% ctx${RST}${SEP}${LGRAY}${tks_fmt}/${cost_fmt} tks${RST}${week_info}"
+printf "${GREEN}${model}${RST}${effort_suffix}${SEP}${CYAN}${last_two}${RST}${git_info}${SEP}${YELLOW}${pct_fmt}%% ctx${RST}${SEP}${LGRAY}${cost_fmt}${RST}${week_info}"

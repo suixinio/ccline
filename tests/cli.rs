@@ -10,6 +10,19 @@ fn full_json() -> String {
     )
 }
 
+fn now_secs() -> u64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_secs()
+}
+
+fn rate_limits_json(resets_at: u64) -> String {
+    format!(
+        r#"{{"workspace":{{"current_dir":"/tmp/foo/bar"}},"rate_limits":{{"five_hour":{{"used_percentage":23.5,"resets_at":{resets_at}}},"seven_day":{{"used_percentage":41.2,"resets_at":{resets_at}.0}}}}}}"#
+    )
+}
+
 fn minimal_json() -> &'static str {
     r#"{"workspace":{"current_dir":"/tmp/foo/bar"}}"#
 }
@@ -92,4 +105,33 @@ fn no_user_host() {
     cmd.assert()
         .success()
         .stdout(predicate::str::contains(&format!("{}@", user)).not());
+}
+
+#[test]
+fn shows_weekly_usage_and_reset() {
+    let resets_at = now_secs() + 2 * 86_400 + 3 * 3600 + 30 * 60;
+    let mut cmd = cargo_bin_cmd!("ccline");
+    cmd.write_stdin(rate_limits_json(resets_at));
+    cmd.assert()
+        .success()
+        .stdout(predicate::str::contains("41%/7d ↻2d3h"));
+}
+
+#[test]
+fn no_weekly_usage_without_rate_limits() {
+    let mut cmd = cargo_bin_cmd!("ccline");
+    cmd.write_stdin(minimal_json());
+    cmd.assert()
+        .success()
+        .stdout(predicate::str::contains("/7d").not());
+}
+
+#[test]
+fn no_weekly_usage_after_reset() {
+    let mut cmd = cargo_bin_cmd!("ccline");
+    cmd.write_stdin(rate_limits_json(now_secs() - 60));
+    cmd.assert()
+        .success()
+        .stdout(predicate::str::contains("foo/bar"))
+        .stdout(predicate::str::contains("/7d").not());
 }

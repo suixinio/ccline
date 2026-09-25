@@ -21,12 +21,13 @@ Claude Code sends a [rich JSON payload](https://code.claude.com/docs/en/statusli
 | Used | Available but unused |
 |------|---------------------|
 | `workspace.current_dir` | `model.id` |
-| `model.display_name` | `cost.total_lines_added/removed` |
+| `model.display_name`, `effort.level` | `cost.total_lines_added/removed` |
 | `cost.total_cost_usd` | `vim.mode`, `session_id`, `worktree.*` |
 | `context_window.total_input_tokens` | |
 | `context_window.total_output_tokens` | |
 | `context_window.context_window_size` | |
-| `context_window.used_percentage` | |
+| `context_window.used_percentage` | `rate_limits.five_hour.*` |
+| `rate_limits.seven_day.used_percentage`/`resets_at` | |
 | (git via libgit2) | |
 
 Fork this repo and add the fields that matter to you. The serde structs in `main.rs` are easy to extend.
@@ -67,6 +68,7 @@ Then add to `~/.claude/settings.json`:
 | Git | muted purple `#7a6db0` | `git2` branch + dirty |
 | Context | muted yellow `#b09a42` | `used_percentage`/`context_window_size` |
 | Tokens+Cost | light gray | `context_window` total + `cost.total_cost_usd` |
+| Weekly limit | muted cyan `#5a9ea0` | `rate_limits.seven_day` % + reset countdown (Pro/Max only) |
 | Separators | dark gray | `\x1b[90m` |
 
 ## Benchmarking

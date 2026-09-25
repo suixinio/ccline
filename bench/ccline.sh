@@ -11,7 +11,9 @@ eval "$(cat | jq -r '
   "in_tks=\(.context_window.total_input_tokens) " +
   "out_tks=\(.context_window.total_output_tokens) " +
   "pct=\(.context_window.used_percentage) " +
-  "win=\(.context_window.context_window_size)"
+  "win=\(.context_window.context_window_size) " +
+  "week_pct=\((.rate_limits.seven_day.used_percentage // "") | @sh) " +
+  "week_reset=\((.rate_limits.seven_day.resets_at // "") | @sh)"
 ')"
 total_tks=$((in_tks + out_tks))
 last_two=$(echo "$cwd" | rev | cut -d/ -f1-2 | rev)
@@ -65,4 +67,16 @@ if [ -n "$effort" ]; then
   effort_suffix=" ${GRAY}(${RST}${YELLOW}${effort}${RST}${GRAY})${RST}"
 fi
 
-printf "${GREEN}${model}${RST}${effort_suffix}${SEP}${CYAN}${last_two}${RST}${git_info}${SEP}${YELLOW}${pct_fmt}%%/${win_fmt} ctx${RST}${SEP}${LGRAY}${tks_fmt}/${cost_fmt} tks${RST}"
+week_info=""
+if [ -n "$week_pct" ] && [ -n "$week_reset" ]; then
+  left=$((${week_reset%.*} - $(date +%s)))
+  if [ "$left" -gt 0 ]; then
+    d=$((left / 86400)); h=$((left % 86400 / 3600)); m=$((left % 3600 / 60))
+    if [ "$d" -gt 0 ]; then dur="${d}d${h}h"
+    elif [ "$h" -gt 0 ]; then dur="${h}h${m}m"
+    else dur="${m}m"; fi
+    week_info="${SEP}${CYAN}$(printf '%.0f' "$week_pct")%%/7d ↻${dur}${RST}"
+  fi
+fi
+
+printf "${GREEN}${model}${RST}${effort_suffix}${SEP}${CYAN}${last_two}${RST}${git_info}${SEP}${YELLOW}${pct_fmt}%%/${win_fmt} ctx${RST}${SEP}${LGRAY}${tks_fmt}/${cost_fmt} tks${RST}${week_info}"

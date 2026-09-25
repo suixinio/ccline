@@ -1,6 +1,7 @@
 use git2::Repository;
 use serde::Deserialize;
 use std::io::{self, Read};
+use std::time::{SystemTime, UNIX_EPOCH};
 
 #[derive(Deserialize)]
 struct Input {
@@ -9,6 +10,7 @@ struct Input {
     effort: Option<Effort>,
     cost: Option<Cost>,
     context_window: Option<ContextWindow>,
+    rate_limits: Option<RateLimits>,
 }
 
 #[derive(Deserialize)]
@@ -37,6 +39,17 @@ struct ContextWindow {
     total_output_tokens: u64,
     context_window_size: Option<u64>,
     used_percentage: Option<f64>,
+}
+
+#[derive(Deserialize)]
+struct RateLimits {
+    seven_day: Option<RateWindow>,
+}
+
+#[derive(Deserialize)]
+struct RateWindow {
+    used_percentage: Option<f64>,
+    resets_at: Option<f64>,
 }
 
 // Monokai Pro palette at ~60% brightness
@@ -75,6 +88,17 @@ fn human_tokens(n: u64) -> String {
         format!("{:.1}k", n as f64 / 1000.0)
     } else {
         format!("{}", n)
+    }
+}
+
+fn human_duration(secs: u64) -> String {
+    let (d, h, m) = (secs / 86_400, secs % 86_400 / 3600, secs % 3600 / 60);
+    if d > 0 {
+        format!("{d}d{h}h")
+    } else if h > 0 {
+        format!("{h}h{m}m")
+    } else {
+        format!("{m}m")
     }
 }
 
@@ -166,6 +190,27 @@ fn main() {
         _ => {}
     }
 
+    // Weekly rate limit usage + reset countdown
+    if let Some(week) = input
+        .rate_limits
+        .as_ref()
+        .and_then(|r| r.seven_day.as_ref())
+    {
+        if let (Some(pct), Some(resets_at)) = (week.used_percentage, week.resets_at) {
+            let now = SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .map_or(0, |d| d.as_secs());
+            let left = resets_at as i64 - now as i64;
+            if left > 0 {
+                segments.push(format!(
+                    "{CYAN}{:.0}%/7d ↻{}{RESET}",
+                    pct,
+                    human_duration(left as u64)
+                ));
+            }
+        }
+    }
+
     print!("{}", segments.join(&sep));
 }
 
@@ -196,6 +241,21 @@ mod tests {
     #[test]
     fn test_human_tokens_zero() {
         assert_eq!(human_tokens(0), "0");
+    }
+
+    #[test]
+    fn test_human_duration_days() {
+        assert_eq!(human_duration(2 * 86_400 + 3 * 3600 + 59 * 60), "2d3h");
+    }
+
+    #[test]
+    fn test_human_duration_hours() {
+        assert_eq!(human_duration(5 * 3600 + 12 * 60 + 30), "5h12m");
+    }
+
+    #[test]
+    fn test_human_duration_minutes() {
+        assert_eq!(human_duration(42 * 60 + 5), "42m");
     }
 
     #[test]

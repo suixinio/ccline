@@ -14,10 +14,12 @@ Single file: `src/main.rs`. No CLI args, no config. Hardcoded layout.
 ## Input
 JSON on stdin from Claude Code. Full schema: https://code.claude.com/docs/en/statusline#available-data
 
-Key fields used: `workspace.current_dir`, `model.display_name`, `cost.total_cost_usd`, `context_window.total_input_tokens`, `context_window.total_output_tokens`, `context_window.context_window_size`, `context_window.used_percentage`
+Key fields used: `workspace.current_dir`, `model.display_name`, `cost.total_cost_usd`, `context_window.total_input_tokens`, `context_window.total_output_tokens`, `context_window.context_window_size`, `context_window.used_percentage`, `effort.level`, `rate_limits.seven_day.used_percentage`, `rate_limits.seven_day.resets_at`
 
 ## Output
-Pipe-separated ANSI line: `Model | path | branch* | %/window ctx | tokens/$cost tks`
+Pipe-separated ANSI line: `Model | path | branch* | %/window ctx | tokens/$cost tks | %/7d ↻countdown`
+
+The weekly segment only appears for claude.ai Pro/Max sessions (after the first API response) and is hidden once `resets_at` has passed.
 
 `docs/example.svg` shows the colored output in the README. Update it whenever the layout changes.
 

@@ -69,7 +69,7 @@ fn shows_token_count() {
     cmd.write_stdin(full_json());
     cmd.assert()
         .success()
-        .stdout(predicate::str::contains("10%/200k ctx"));
+        .stdout(predicate::str::contains("10% ctx"));
 }
 
 #[test]

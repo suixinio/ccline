@@ -37,7 +37,6 @@ struct Cost {
 struct ContextWindow {
     total_input_tokens: u64,
     total_output_tokens: u64,
-    context_window_size: Option<u64>,
     used_percentage: Option<f64>,
 }
 
@@ -162,9 +161,8 @@ fn main() {
 
     // Context window usage
     if let Some(ref ctx) = input.context_window {
-        if let (Some(pct), Some(window)) = (ctx.used_percentage, ctx.context_window_size) {
-            let ctx_str = format!("{:.0}%/{} ctx", pct, human_tokens(window));
-            segments.push(format!("{YELLOW}{ctx_str}{RESET}"));
+        if let Some(pct) = ctx.used_percentage {
+            segments.push(format!("{YELLOW}{:.0}% ctx{RESET}", pct));
         }
     }
 

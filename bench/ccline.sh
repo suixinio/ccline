@@ -11,7 +11,6 @@ eval "$(cat | jq -r '
   "in_tks=\(.context_window.total_input_tokens) " +
   "out_tks=\(.context_window.total_output_tokens) " +
   "pct=\(.context_window.used_percentage) " +
-  "win=\(.context_window.context_window_size) " +
   "week_pct=\((.rate_limits.seven_day.used_percentage // "") | @sh) " +
   "week_reset=\((.rate_limits.seven_day.resets_at // "") | @sh)"
 ')"
@@ -32,7 +31,6 @@ human_tokens() {
 }
 
 tks_fmt=$(human_tokens "$total_tks")
-win_fmt=$(human_tokens "$win")
 pct_fmt=$(printf '%.0f' "$pct")
 cost_fmt=$(printf '$%.2f' "$cost")
 
@@ -79,4 +77,4 @@ if [ -n "$week_pct" ] && [ -n "$week_reset" ]; then
   fi
 fi
 
-printf "${GREEN}${model}${RST}${effort_suffix}${SEP}${CYAN}${last_two}${RST}${git_info}${SEP}${YELLOW}${pct_fmt}%%/${win_fmt} ctx${RST}${SEP}${LGRAY}${tks_fmt}/${cost_fmt} tks${RST}${week_info}"
+printf "${GREEN}${model}${RST}${effort_suffix}${SEP}${CYAN}${last_two}${RST}${git_info}${SEP}${YELLOW}${pct_fmt}%% ctx${RST}${SEP}${LGRAY}${tks_fmt}/${cost_fmt} tks${RST}${week_info}"
